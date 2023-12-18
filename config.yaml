@@ -1,0 +1,13 @@
+#---------------------------------------------------
+#General Parameters 
+#---------------------------------------------------
+SAMPLES: "samples.tsv"
+MEMORY: "-Xmx20g" #for 20giga, change as much giga as you have 
+CORES: 8
+#------------------------------------------------------------------
+#Change this set of parameters if you wish to run at Genome level 
+#------------------------------------------------------------------
+GENOME: "/scratch/thahoang_root/thahoang0/sherinem/references/Homo_sapiens/Ensembl/GRCh37/Sequence/WholeGenomeFasta/genome.fa"  
+GTF: "/scratch/thahoang_root/thahoang0/sherinem/references/Homo_sapiens/Ensembl/GRCh37/Annotation/Genes/genes.gtf" 
+INDEX: "/scratch/thahoang_root/thahoang0/sherinem/references/Homo_sapiens/Ensembl/GRCh37/Sequence/Bowtie2Index/genome" 
+
