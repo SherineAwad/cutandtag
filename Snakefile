@@ -7,13 +7,15 @@ rule all:
          input:
             expand("galore/{sample}_R1_001_val_1.fq.gz", sample = SAMPLES),
             expand("galore/{sample}_R2_001_val_2.fq.gz", sample = SAMPLES),
-            expand("{sample}.bam", sample = SAMPLES),
+            expand("{sample}.sam", sample = SAMPLES),
+            expand("{sample}.bam", sample = SAMPLES), 
             expand("{sample}.sorted.bam", sample =SAMPLES),
             expand("{sample}.dupMark.bam", sample =SAMPLES),
             expand("{sample}.sorted.rmDup.bam", sample =SAMPLES),
             expand("{sample}.rmDup.unique.bam", sample =SAMPLES), 
             expand("{sample}.bigwig", sample = SAMPLES),
-            expand("{sample}_tagdir", sample =SAMPLES)
+            expand("{sample}_tagdir", sample =SAMPLES), 
+            expand("{sample}_tagdir/peaks.txt", sample = SAMPLES) 
 rule trim: 
        input: 
            r1 = "{sample}_R1_001.fastq.gz",
@@ -32,15 +34,24 @@ rule align:
                    "galore/{sample}_R1_001_val_1.fq.gz",
                    "galore/{sample}_R2_001_val_2.fq.gz"
               params:
-                   genome=config['GENOME'],
+                   index=config['INDEX'],
                    mem = config['MEMORY'],
                    cores = config['CORES']
               output:
-                   "{sample}.bam",
+                   "{sample}.sam",
                    "{sample}_hist.txt" 
               shell:
                    """
-                   bowtie2 --end-to-end --very-sensitive --no-mixed --no-discordant --phred33 -I 10 -X 700 -p {params.cores} -x {params.genome} -1 {input[0]} -2 {input[1]} -b {output[0]}  &> {output[1]}
+                   bowtie2 --local --very-sensitive-local --no-mixed --no-discordant --phred33 -I 10 -X 700 -p {params.cores} -x {params.index} -1 {input[0]} -2 {input[1]} -S {output[0]}  &> {output[1]}
+                   """
+rule samTobam:
+             input: 
+                 "{sample}.sam"
+             output: 
+                 "{sample}.bam"
+             shell: 
+                   """
+                   samtools view -bS {input} > {output}
                    """
 
 rule sort: 
@@ -99,6 +110,15 @@ rule tag_dir:
         """ 
         makeTagDirectory {params} -single {input} 
         """ 
+rule findPeaks: 
+      input: 
+        "{sample}_tagdir" 
+      output: 
+      "{sample}_tagdir/peaks.txt" 
+      shell: 
+         """ 
+         findPeaks {input} -o auto
+         """
 
 ######	For visualisation and debugging 
 rule get_unique:  
