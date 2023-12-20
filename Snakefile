@@ -14,8 +14,8 @@ rule all:
             expand("{sample}.sorted.rmDup.bam", sample =SAMPLES),
             expand("{sample}.rmDup.unique.bam", sample =SAMPLES), 
             expand("{sample}.bigwig", sample = SAMPLES),
-            #expand("{sample}_tagdir", sample =SAMPLES), 
-            #expand("{sample}_tagdir/peaks.txt", sample = SAMPLES) 
+            expand("{sample}_tagdir/tagCountDistribution.txt", sample =SAMPLES), 
+            expand("{sample}_tagdir/peaks.txt", sample = SAMPLES) 
 rule trim: 
        input: 
            r1 = "{sample}_R1_001.fastq.gz",
@@ -113,7 +113,7 @@ rule tag_dir:
       input: 
        "{sample}.sorted.rmDup.bam"
       output: 
-         "{sample}_tagdir" 
+         "{sample}_tagdir/tagCountDistribution.txt" 
       params: 
         "{sample}_tagdir" 
       shell: 
@@ -122,12 +122,14 @@ rule tag_dir:
         """ 
 rule findPeaks: 
       input: 
-        "{sample}_tagdir" 
+        "{sample}_tagdir/tagCountDistribution.txt" 
+      params: 
+        "{sample}_tagdir"
       output: 
-      "{sample}_tagdir/peaks.txt" 
+        "{sample}_tagdir/peaks.txt", 
       shell: 
          """ 
-         findPeaks {input} -o auto
+         findPeaks {params} -o auto 
          """
 
 ######	For visualisation and debugging 
