@@ -14,8 +14,8 @@ rule all:
             expand("{sample}.sorted.rmDup.bam", sample =SAMPLES),
             expand("{sample}.rmDup.unique.bam", sample =SAMPLES), 
             expand("{sample}.bigwig", sample = SAMPLES),
-            expand("{sample}_tagdir", sample =SAMPLES), 
-            expand("{sample}_tagdir/peaks.txt", sample = SAMPLES) 
+            #expand("{sample}_tagdir", sample =SAMPLES), 
+            #expand("{sample}_tagdir/peaks.txt", sample = SAMPLES) 
 rule trim: 
        input: 
            r1 = "{sample}_R1_001.fastq.gz",
@@ -72,7 +72,7 @@ rule mark_duplicates:
                "{sample}.dupMark.txt"
              shell: 
                  """ 
-                  picard MarkDuplicates I= {input} O ={output[0]} METRICS_FILE={output[1]}
+                  picard MarkDuplicates I={input} O={output[0]} METRICS_FILE={output[1]}
                  """ 
 
 rule remove_duplicates:
@@ -86,9 +86,19 @@ rule remove_duplicates:
             picard MarkDuplicates I={input} O={output[0]} REMOVE_DUPLICATES=true METRICS_FILE={output[1]} 
            """
 
+rule index: 
+      input: 
+         "{sample}.sorted.rmDup.bam"
+      output: 
+         "{sample}.sorted.rmDup.bam.bai"  
+      shell: 
+          """
+          samtools index {input} 
+          """ 
 rule bamCoverage: 
        input: 
-        "{sample}.sorted.rmDup.bam"
+        "{sample}.sorted.rmDup.bam",
+        "{sample}.sorted.rmDup.bam.bai" 
        output: 
         "{sample}.bigwig" 
        params: 
@@ -97,7 +107,7 @@ rule bamCoverage:
          num_processors = config['Num_Processors'] 
        shell: 
           """ 
-          bamCoverage -b {input} -p {params.num_processors}  --normaliseUsing RPGC --effectiveGenomeSize {params.genome_size} --binSize {params.binsize} -o {output} 
+          bamCoverage -b {input[0]} -p {params.num_processors}  --normalizeUsing RPGC --effectiveGenomeSize {params.genome_size} --binSize {params.binsize} -o {output} 
           """ 
 rule tag_dir: 
       input: 
