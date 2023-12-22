@@ -10,9 +10,9 @@ rule all:
             expand("{sample}.sam", sample = SAMPLES),
             expand("{sample}.bam", sample = SAMPLES), 
             expand("{sample}.sorted.bam", sample =SAMPLES),
-            expand("{sample}.dupMark.bam", sample =SAMPLES),
             expand("{sample}.sorted.rmDup.bam", sample =SAMPLES),
             expand("{sample}.rmDup.unique.bam", sample =SAMPLES), 
+            expand("{sample}.unique.counts", sample = SAMPLES),
             expand("{sample}.bigwig", sample = SAMPLES),
             expand("{sample}_tagdir/tagCountDistribution.txt", sample =SAMPLES), 
             expand("{sample}_tagdir/peaks.txt", sample = SAMPLES) 
@@ -63,17 +63,6 @@ rule sort:
                    """ 
                    picard SortSam I={input}  O={output} SORT_ORDER=coordinate 
                    """ 
-
-rule mark_duplicates: 
-             input: 
-               "{sample}.sorted.bam"
-             output: 
-               "{sample}.dupMark.bam",
-               "{sample}.dupMark.txt"
-             shell: 
-                 """ 
-                  picard MarkDuplicates I={input} O={output[0]} METRICS_FILE={output[1]}
-                 """ 
 
 rule remove_duplicates:
        input: 
@@ -137,8 +126,10 @@ rule get_unique:
      input: 
        "{sample}.sorted.rmDup.bam"
      output: 
-       "{sample}.rmDup.unique.bam"
+       #"{sample}.rmDup.unique.bam"
+        "{sample}.unique.counts" 
      shell: 
        """
-       samtools view -b -q 10 {input} > {output}
+       #samtools view -c -b -q 10 {input} > {output}
+       samtools view -c -q 10 {input} > {output}
        """  
