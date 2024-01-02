@@ -15,7 +15,8 @@ rule all:
             expand("{sample}.unique.counts", sample = SAMPLES),
             expand("{sample}.bigwig", sample = SAMPLES),
             expand("{sample}_tagdir/tagCountDistribution.txt", sample =SAMPLES), 
-            expand("{sample}_tagdir/peaks.txt", sample = SAMPLES) 
+            expand("{sample}_tagdir/peaks.txt", sample = SAMPLES), 
+            expand("macs2/{sample}_summits.bed", sample = SAMPLES)
 rule trim: 
        input: 
            r1 = "{sample}_R1_001.fastq.gz",
@@ -23,6 +24,7 @@ rule trim:
        output: 
            "galore/{sample}_R1_001_val_1.fq.gz",
            "galore/{sample}_R2_001_val_2.fq.gz"
+       conda: 'env/env-trim.yaml'
        shell: 
            """
            mkdir -p galore 
@@ -37,6 +39,7 @@ rule align:
                    index=config['INDEX'],
                    mem = config['MEMORY'],
                    cores = config['CORES']
+              conda: 'env/env-align.yaml'
               output:
                    "{sample}.sam",
                    "{sample}_hist.txt" 
@@ -49,6 +52,7 @@ rule samTobam:
                  "{sample}.sam"
              output: 
                  "{sample}.bam"
+             conda: 'env/env-align.yaml'
              shell: 
                    """
                    samtools view -bS {input} > {output}
@@ -59,6 +63,7 @@ rule sort:
                   "{sample}.bam"
              output: 
                     "{sample}.sorted.bam"
+             conda: 'env/env-picard.yaml'
              shell: 
                    """ 
                    picard SortSam I={input}  O={output} SORT_ORDER=coordinate 
@@ -69,7 +74,8 @@ rule remove_duplicates:
         "{sample}.sorted.bam"
        output: 
          "{sample}.sorted.rmDup.bam",
-         "{sample}.rmDup.txt" 
+         "{sample}.rmDup.txt"
+       conda: 'env/env-picard.yaml' 
        shell: 
            """
             picard MarkDuplicates I={input} O={output[0]} REMOVE_DUPLICATES=true METRICS_FILE={output[1]} 
@@ -79,7 +85,8 @@ rule index:
       input: 
          "{sample}.sorted.rmDup.bam"
       output: 
-         "{sample}.sorted.rmDup.bam.bai"  
+         "{sample}.sorted.rmDup.bam.bai"
+      conda: 'env/env-align.yaml'  
       shell: 
           """
           samtools index {input} 
@@ -94,6 +101,7 @@ rule bamCoverage:
          genome_size = config['Genome_Size'], 
          binsize = config['BINSIZE'], 
          num_processors = config['Num_Processors'] 
+       conda: 'env/env-coverage'
        shell: 
           """ 
           bamCoverage -b {input[0]} -p {params.num_processors}  --normalizeUsing RPGC --effectiveGenomeSize {params.genome_size} --binSize {params.binsize} -o {output} 
@@ -105,6 +113,7 @@ rule tag_dir:
          "{sample}_tagdir/tagCountDistribution.txt" 
       params: 
         "{sample}_tagdir" 
+      conda:'env/env-peaks.yaml' 
       shell: 
         """ 
         makeTagDirectory {params} -single {input} 
@@ -115,19 +124,40 @@ rule findPeaks:
       params: 
         "{sample}_tagdir"
       output: 
-        "{sample}_tagdir/peaks.txt", 
+        "{sample}_tagdir/peaks.txt",
+      conda: 'env/env-peaks.yaml'  
       shell: 
          """ 
          findPeaks {params} -o auto 
          """
 
+
+rule macs_bed: 
+      input: 
+         "{sample}.sorted.rmDup.bam"
+      params: 
+         "{sample}", 
+         genome_size = config['Genome_Size'] 
+      output: 
+          "macs2/{sample}_summits.bed" 
+      conda: 'env/env-peaks.yaml' 
+      shell: 
+           """
+           macs2 callpeak -t {input} 
+ 	-f BAM -g {params[1]} \
+	-n {params[0]} \ 
+        --nomodel 
+	--outdir macs2
+
+         """
 ######	For visualisation and debugging 
 rule get_unique:  
      input: 
        "{sample}.sorted.rmDup.bam"
      output: 
        #"{sample}.rmDup.unique.bam"
-        "{sample}.unique.counts" 
+        "{sample}.unique.counts"
+     conda: 'env/env-align.yaml' 
      shell: 
        """
        #samtools view -c -b -q 10 {input} > {output}

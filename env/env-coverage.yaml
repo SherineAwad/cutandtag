@@ -1,0 +1,7 @@
+# conda environment configuration for snakemake --use-conda
+channels:
+    - conda-forge
+    - bioconda
+    - defaults
+dependencies:
+    - deeptools= 3.5.4
