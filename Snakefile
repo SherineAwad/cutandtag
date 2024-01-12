@@ -1,23 +1,43 @@
-with open(config['SAMPLES']) as fp:
-    SAMPLES = fp.read().splitlines()
+with open(config['CONTROL']) as fp:
+    CONTROL = fp.read().splitlines()
 
-print(SAMPLES) 
+print(CONTROL) 
+
+with open(config['TREAT']) as fp:
+    TREAT = fp.read().splitlines()
+
+print(TREAT)
 
 rule all:
          input:
-            expand("galore/{sample}_R1_001_val_1.fq.gz", sample = SAMPLES),
-            expand("galore/{sample}_R2_001_val_2.fq.gz", sample = SAMPLES),
-            expand("{sample}.sam", sample = SAMPLES),
-            expand("{sample}.bam", sample = SAMPLES), 
-            expand("{sample}.sorted.bam", sample =SAMPLES),
-            expand("{sample}.sorted.rmDup.bam", sample =SAMPLES),
-            expand("{sample}.rmDup.unique.bam", sample =SAMPLES), 
-            expand("{sample}.unique.counts", sample = SAMPLES),
-            expand("{sample}.bigwig", sample = SAMPLES),
-            expand("{sample}_tagdir/tagCountDistribution.txt", sample =SAMPLES), 
-            expand("{sample}_tagdir/peaks.txt", sample = SAMPLES), 
-            expand("macs2/{sample}_summits.bed", sample = SAMPLES),
-            expand("Motif_{sample}/seq.autonorm.tsv", sample = SAMPLES)
+            #Run on Control
+            expand("galore/{sample}_R1_001_val_1.fq.gz", sample = CONTROL),
+            expand("galore/{sample}_R2_001_val_2.fq.gz", sample = CONTROL),
+            expand("{sample}.sam", sample = CONTROL),
+            expand("{sample}.bam", sample = CONTROL), 
+            expand("{sample}.sorted.bam", sample =CONTROL),
+            expand("{sample}.sorted.rmDup.bam", sample =CONTROL),
+            expand("{sample}.rmDup.unique.bam", sample =CONTROL), 
+            expand("{sample}.unique.counts", sample = CONTROL),
+            expand("{sample}.bigwig", sample = CONTROL),
+            expand("{sample}_tagdir/tagCountDistribution.txt", sample =CONTROL), 
+            expand("{sample}_tagdir/peaks.txt", sample = CONTROL), 
+            #Run on Treat   
+            expand("galore/{sample}_R1_001_val_1.fq.gz", sample = TREAT),
+            expand("galore/{sample}_R2_001_val_2.fq.gz", sample = TREAT),
+            expand("{sample}.sam", sample = TREAT),
+            expand("{sample}.bam", sample = TREAT),
+            expand("{sample}.sorted.bam", sample =TREAT),
+            expand("{sample}.sorted.rmDup.bam", sample =TREAT),
+            expand("{sample}.rmDup.unique.bam", sample =TREAT),
+            expand("{sample}.unique.counts", sample = TREAT),
+            expand("{sample}.bigwig", sample = TREAT),
+            expand("{sample}_tagdir/tagCountDistribution.txt", sample = TREAT),
+            expand("{sample}_tagdir/peaks.txt", sample = TREAT),
+            
+            expand("macs2/{sample}_summits.bed", sample = TREAT),
+            expand("Motif_{sample}/seq.autonorm.tsv", sample = TREAT)
+
 rule trim: 
        input: 
            r1 = "{sample}_R1_001.fastq.gz",
