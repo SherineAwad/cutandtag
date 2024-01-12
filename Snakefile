@@ -16,7 +16,8 @@ rule all:
             expand("{sample}.bigwig", sample = SAMPLES),
             expand("{sample}_tagdir/tagCountDistribution.txt", sample =SAMPLES), 
             expand("{sample}_tagdir/peaks.txt", sample = SAMPLES), 
-            expand("macs2/{sample}_summits.bed", sample = SAMPLES)
+            expand("macs2/{sample}_summits.bed", sample = SAMPLES),
+            expand("Motif_{sample}/seq.autonorm.tsv", sample = SAMPLES)
 rule trim: 
        input: 
            r1 = "{sample}_R1_001.fastq.gz",
@@ -143,13 +144,22 @@ rule macs_bed:
       conda: 'env/env-peaks.yaml' 
       shell: 
            """
-           macs2 callpeak -t {input} 
- 	-f BAM -g {params[1]} \
-	-n {params[0]} \ 
-        --nomodel 
-	--outdir macs2
+           bash macs2.sh 
+           """
 
+rule findMotifs: 
+      input: 
+          "macs2/{sample}_summits.bed"
+      params: 
+          genome = config['GENOME'],
+          output_dir = "Motif_{sample}"  
+      output:  
+          "Motif_{sample}/seq.autonorm.tsv" 
+      shell: 
          """
+          findMotifsGenome.pl {input} {params.genome} {params.output_dir} -size 200 -mask 
+         """
+
 ######	For visualisation and debugging 
 rule get_unique:  
      input: 
