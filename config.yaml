@@ -11,7 +11,7 @@ CORES: 8
 GENOME: "/scratch/thahoang_root/thahoang0/sherinem/references/Homo_sapiens/Ensembl/GRCh37/Sequence/WholeGenomeFasta/genome.fa"  
 GTF: "/scratch/thahoang_root/thahoang0/sherinem/references/Homo_sapiens/Ensembl/GRCh37/Annotation/Genes/genes.gtf" 
 INDEX: "/scratch/thahoang_root/thahoang0/sherinem/references/Homo_sapiens/Ensembl/GRCh37/Sequence/Bowtie2Index/genome" 
-
+VERSION: hg19
 Num_Processors: 4
 BINSIZE: 1
 Genome_Size: 2864785220 

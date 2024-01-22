@@ -35,9 +35,12 @@ rule all:
             expand("{sample}_tagdir/tagCountDistribution.txt", sample = TREAT),
             expand("{sample}_tagdir/peaks.txt", sample = TREAT),
             
-            expand("macs2/{sample}_summits.bed", sample = TREAT),
-            expand("Motif_{sample}/seq.autonorm.tsv", sample = TREAT)
-
+            #expand("macs2/{sample}_summits.bed", sample = TREAT),
+            #expand("macs2/{sample}_peaks.narrowPeak", sample = TREAT),
+            #expand("Motif_{sample}/seq.autonorm.tsv", sample = TREAT),
+            expand("{sample}.annotatednarrowpeaks", sample = TREAT), 
+            expand("{sample}.annotatedSummitpeaks", sample=TREAT) 
+                       
 rule trim: 
        input: 
            r1 = "{sample}_R1_001.fastq.gz",
@@ -160,7 +163,8 @@ rule macs_bed:
          "{sample}", 
          genome_size = config['Genome_Size'] 
       output: 
-          "macs2/{sample}_summits.bed" 
+          "macs2/{sample}_summits.bed",
+          "macs2/{sample}_peaks.narrowPeak" 
       conda: 'env/env-peaks.yaml' 
       shell: 
            """
@@ -179,6 +183,34 @@ rule findMotifs:
          """
           findMotifsGenome.pl {input} {params.genome} {params.output_dir} -size 200 -mask 
          """
+
+rule annotateNarrowPeaks: 
+      input: 
+         "macs2/{sample}_peaks.narrowPeak" 
+      params: 
+           genome= config['GENOME'], 
+           gtf = config['GTF']  
+      output: 
+         "{sample}.annotatednarrowpeaks", 
+         "{sample}.annotatednarrowpeaks.stats"
+      shell: 
+          """
+          annotatePeaks.pl {input} {params.genome} -gtf {params.gtf}   -annStats {output[1]}  > {output[0]}    
+          """ 
+
+rule annotateSummitPeaks: 
+      input:
+         "macs2/{sample}_summits.bed"
+      params:
+           genome= config['GENOME'],
+           gtf = config['GTF']
+      output:
+         "{sample}.annotatedSummitpeaks",
+         "{sample}.annotatedSummitpeaks.stats"
+      shell:
+          """
+          annotatePeaks.pl {input} {params.genome} -gtf {params.gtf}   -annStats {output[1]}  > {output[0]}
+          """
 
 ######	For visualisation and debugging 
 rule get_unique:  
