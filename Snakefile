@@ -35,11 +35,12 @@ rule all:
             expand("{sample}_tagdir/tagCountDistribution.txt", sample = TREAT),
             expand("{sample}_tagdir/peaks.txt", sample = TREAT),
             
+            expand("{sample}_tagdir/diffpeaks.txt", sample = TREAT)
             #expand("macs2/{sample}_summits.bed", sample = TREAT),
             #expand("macs2/{sample}_peaks.narrowPeak", sample = TREAT),
             #expand("Motif_{sample}/seq.autonorm.tsv", sample = TREAT),
-            expand("{sample}.annotatednarrowpeaks", sample = TREAT), 
-            expand("{sample}.annotatedSummitpeaks", sample=TREAT) 
+            #expand("{sample}.annotatednarrowpeaks", sample = TREAT), 
+            #expand("{sample}.annotatedSummitpeaks", sample=TREAT) 
                        
 rule trim: 
        input: 
@@ -130,7 +131,7 @@ rule bamCoverage:
           """ 
           bamCoverage -b {input[0]} -p {params.num_processors}  --normalizeUsing RPGC --effectiveGenomeSize {params.genome_size} --binSize {params.binsize} -o {output} 
           """ 
-rule tag_dir: 
+rule Homer_tag_dir: 
       input: 
        "{sample}.sorted.rmDup.bam"
       output: 
@@ -142,7 +143,7 @@ rule tag_dir:
         """ 
         makeTagDirectory {params} -single {input} 
         """ 
-rule findPeaks: 
+rule Homer_findPeaks: 
       input: 
         "{sample}_tagdir/tagCountDistribution.txt" 
       params: 
@@ -155,7 +156,17 @@ rule findPeaks:
          findPeaks {params} -o auto 
          """
 
-
+rule Home_annotatePeaks: 
+     input: 
+         "{sample}_tagdir/peaks.txt"
+     params: 
+          version = config['VERSION'] 
+     output: 
+         "{sample}_tagdir/diffpeaks.txt"
+     shell:
+         """ 
+         annotatePeaks.pl {input} {params.version} > {output}  
+         """ 
 rule macs_bed: 
       input: 
          "{sample}.sorted.rmDup.bam"
