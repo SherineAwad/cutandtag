@@ -20,8 +20,6 @@ rule all:
             expand("{sample}.rmDup.unique.bam", sample =CONTROL), 
             expand("{sample}.unique.counts", sample = CONTROL),
             expand("{sample}.bigwig", sample = CONTROL),
-            expand("{sample}_tagdir/tagCountDistribution.txt", sample =CONTROL), 
-            expand("{sample}_tagdir/peaks.txt", sample = CONTROL), 
             #Run on Treat   
             expand("galore/{sample}_R1_001_val_1.fq.gz", sample = TREAT),
             expand("galore/{sample}_R2_001_val_2.fq.gz", sample = TREAT),
@@ -32,15 +30,9 @@ rule all:
             expand("{sample}.rmDup.unique.bam", sample =TREAT),
             expand("{sample}.unique.counts", sample = TREAT),
             expand("{sample}.bigwig", sample = TREAT),
-            expand("{sample}_tagdir/tagCountDistribution.txt", sample = TREAT),
-            expand("{sample}_tagdir/peaks.txt", sample = TREAT),
             
-            expand("{sample}_tagdir/diffpeaks.txt", sample = TREAT)
-            #expand("macs2/{sample}_summits.bed", sample = TREAT),
-            #expand("macs2/{sample}_peaks.narrowPeak", sample = TREAT),
-            #expand("Motif_{sample}/seq.autonorm.tsv", sample = TREAT),
-            #expand("{sample}.annotatednarrowpeaks", sample = TREAT), 
-            #expand("{sample}.annotatedSummitpeaks", sample=TREAT) 
+            expand("macs/{sample}_summits.bed", sample = TREAT),
+            expand("macs/{sample}_peaks.narrowPeak", sample = TREAT),
                        
 rule trim: 
        input: 
@@ -131,42 +123,7 @@ rule bamCoverage:
           """ 
           bamCoverage -b {input[0]} -p {params.num_processors}  --normalizeUsing RPGC --effectiveGenomeSize {params.genome_size} --binSize {params.binsize} -o {output} 
           """ 
-rule Homer_tag_dir: 
-      input: 
-       "{sample}.sorted.rmDup.bam"
-      output: 
-         "{sample}_tagdir/tagCountDistribution.txt" 
-      params: 
-        "{sample}_tagdir" 
-      conda:'env/env-peaks.yaml' 
-      shell: 
-        """ 
-        makeTagDirectory {params} -single {input} 
-        """ 
-rule Homer_findPeaks: 
-      input: 
-        "{sample}_tagdir/tagCountDistribution.txt" 
-      params: 
-        "{sample}_tagdir"
-      output: 
-        "{sample}_tagdir/peaks.txt",
-      conda: 'env/env-peaks.yaml'  
-      shell: 
-         """ 
-         findPeaks {params} -o auto 
-         """
 
-rule Home_annotatePeaks: 
-     input: 
-         "{sample}_tagdir/peaks.txt"
-     params: 
-          version = config['VERSION'] 
-     output: 
-         "{sample}_tagdir/diffpeaks.txt"
-     shell:
-         """ 
-         annotatePeaks.pl {input} {params.version} > {output}  
-         """ 
 rule macs_bed: 
       input: 
          "{sample}.sorted.rmDup.bam"
@@ -174,30 +131,18 @@ rule macs_bed:
          "{sample}", 
          genome_size = config['Genome_Size'] 
       output: 
-          "macs2/{sample}_summits.bed",
-          "macs2/{sample}_peaks.narrowPeak" 
+          "macs/{sample}_summits.bed",
+          "macs/{sample}_peaks.narrowPeak" 
       conda: 'env/env-peaks.yaml' 
       shell: 
            """
            bash macs2.sh 
            """
 
-rule findMotifs: 
-      input: 
-          "macs2/{sample}_summits.bed"
-      params: 
-          genome = config['GENOME'],
-          output_dir = "Motif_{sample}"  
-      output:  
-          "Motif_{sample}/seq.autonorm.tsv" 
-      shell: 
-         """
-          findMotifsGenome.pl {input} {params.genome} {params.output_dir} -size 200 -mask 
-         """
 
 rule annotateNarrowPeaks: 
       input: 
-         "macs2/{sample}_peaks.narrowPeak" 
+         "macs/{sample}_peaks.narrowPeak" 
       params: 
            genome= config['GENOME'], 
            gtf = config['GTF']  
@@ -211,7 +156,7 @@ rule annotateNarrowPeaks:
 
 rule annotateSummitPeaks: 
       input:
-         "macs2/{sample}_summits.bed"
+         "macs/{sample}_summits.bed"
       params:
            genome= config['GENOME'],
            gtf = config['GTF']
@@ -223,16 +168,3 @@ rule annotateSummitPeaks:
           annotatePeaks.pl {input} {params.genome} -gtf {params.gtf}   -annStats {output[1]}  > {output[0]}
           """
 
-######	For visualisation and debugging 
-rule get_unique:  
-     input: 
-       "{sample}.sorted.rmDup.bam"
-     output: 
-       #"{sample}.rmDup.unique.bam"
-        "{sample}.unique.counts"
-     conda: 'env/env-align.yaml' 
-     shell: 
-       """
-       #samtools view -c -b -q 10 {input} > {output}
-       samtools view -c -q 10 {input} > {output}
-       """  
